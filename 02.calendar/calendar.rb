@@ -45,7 +45,7 @@ print '   ' * first_date.cwday if !first_date.sunday?
 (first_date..end_date).each do |date|
   # 日付を出力する
   # 書式指定を行った上で左詰め
-  print ('%2d' % date.day).to_s.ljust(3)
+  print '%2d ' % date.day
   # ブロックパラメータが土曜日の場合改行を入れる
   puts if date.saturday?
 end
