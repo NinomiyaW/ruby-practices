@@ -37,22 +37,24 @@ frames.each_cons(3).each.with_index(1) do |frame, count|
   # 10フレームの計算のために仮に作り出した
   break if count == 11
 
-  if frame[0][0] == 10
-    if frame[1][0] == 10
-      # ２連続でストライクがあった場合の例外（９フレームとターキーの真ん中）
-      if count == 9 || frame[2][0] != 10
-        point += (20 + frame[2][0])
+  point +=
+    if frame[0][0] == 10
+
+      if frame[1][0] == 10
+        # ２連続でストライクがあった場合の例外（９フレームとターキーの真ん中
+        if count == 9 || frame[2][0] != 10
+          (20 + frame[2][0])
+        else
+          30
+        end
       else
-        point += 30
+        (10 + frame[1].sum)
       end
+    elsif frame[0].sum == 10
+      (10 + frame[1][0])
     else
-      point += (10 + frame[1].sum)
+      frame[0].sum
     end
-  elsif frame[0].sum == 10
-    point += (10 + frame[1][0])
-  else
-    point += frame[0].sum
-  end
 end
 
 puts point
