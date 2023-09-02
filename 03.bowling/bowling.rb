@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'debug'
-# require 'bundler/setup'
+
 class Array
   def strike?
     return true if self[0] == 10
@@ -39,8 +39,7 @@ p frames
 # 点数を計算する
 point = 0
 frames.each_with_index do |frame, count|
-  # binding.break
-  # 10フレームの計算のために仮に作り出した
+
   if count >= 9
     point += frame.sum
     next
