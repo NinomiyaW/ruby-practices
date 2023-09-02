@@ -48,8 +48,8 @@ frames.each_with_index do |frame, count|
 
   point +=
     if frame.strike?
-      if frames[count + 1][0] == 10
-        30 if frames[count + 2][0] == 10
+      if frames[count + 1].strike?
+        30 if frames[count + 2].strike?
         (20 + frames[count + 2][0])
       else
         10 + frames[count + 1].sum
