@@ -26,7 +26,6 @@ col_aligned_entries.each do |entries_col|
     entry_path = curdir_fullpath + entry
     if File.symlink?(entry_path)
       print "#{entry}@".ljust(longest_name_length)
-
     elsif File.directory?(entry_path)
       print "#{entry}/".ljust(longest_name_length)
     else
