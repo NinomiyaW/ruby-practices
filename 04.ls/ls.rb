@@ -32,4 +32,5 @@ col_aligned_entries.each do |entries_col|
       print entry.ljust(longest_name_length)
     end
   end
+  puts
 end
