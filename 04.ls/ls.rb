@@ -2,7 +2,7 @@
 
 # オプションなしのls
 COLUMN = 3
-curdir_fullpath = '/'#Dir.getwd
+curdir_fullpath = Dir.getwd
 get_curdir_entries = Dir.children(curdir_fullpath)
 
 # 隠しファイルを取り除く
@@ -12,8 +12,8 @@ longest_name_length = hidden_removed_entries.max_by(&:length).length + 3
 # Array#transposeで要素数が3の配列を作るため、列(定数)を使ってまず行ごとにエントリを分割する
 row = (hidden_removed_entries.length.to_f / COLUMN).ceil
 
-# ファイル数が列の数以下の場合は素直に縦方向に出力する
-if row < 3
+# 行が列の数以下の場合は素直に縦方向に出力する
+if row < COLUMN
   col_aligned_entries = hidden_removed_entries.each_slice(1).to_a
 else
   row_aligned_entries = hidden_removed_entries.each_slice(row).to_a
