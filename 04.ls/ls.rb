@@ -2,7 +2,7 @@
 
 # オプションなしのls
 COLUMN = 3
-curdir_fullpath = Dir.getwd
+curdir_fullpath = '/'#Dir.getwd
 get_curdir_entries = Dir.children(curdir_fullpath)
 
 # 隠しファイルを取り除く
@@ -14,9 +14,9 @@ row = (hidden_removed_entries.length.to_f / COLUMN).ceil
 
 # ファイル数が列の数以下の場合は素直に縦方向に出力する
 if row < 3
-  col_aligned_entries = hidden_removed_entries.map.each_slice(1).to_a
+  col_aligned_entries = hidden_removed_entries.each_slice(1).to_a
 else
-  row_aligned_entries = hidden_removed_entries.map.each_slice(row).to_a
+  row_aligned_entries = hidden_removed_entries.each_slice(row).to_a
   # Array#transposeメソッドを使うには各要素の要素数を統一する必要がある
   # 参照：https://patorash.hatenablog.com/entry/2021/03/17/163504
   row_aligned_entries.map! { |entries_col| entries_col.values_at(0...row) }
