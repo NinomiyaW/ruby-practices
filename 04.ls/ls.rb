@@ -24,8 +24,8 @@ col_aligned_entries =
   end
 
 # 出力
+entry_path = curdir_fullpath == '/' ? curdir_fullpath : "#{curdir_fullpath}/"
 col_aligned_entries.each do |entries_col|
-  entry_path = curdir_fullpath == '/' ? curdir_fullpath : "#{curdir_fullpath}/"
   entries_col.each do |entry|
     # values_atで作り出したnil?は無視
     next if entry.nil?
