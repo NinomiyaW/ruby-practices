@@ -2,7 +2,7 @@
 
 # オプションなしのls
 COLUMN = 3
-curdir_fullpath = Dir.getwd
+curdir_fullpath = "#{Dir.getwd}/"
 get_curdir_entries = Dir.children(curdir_fullpath)
 
 # 隠しファイルを取り除く
@@ -24,13 +24,12 @@ col_aligned_entries =
   end
 
 # 出力
-entry_path = curdir_fullpath == '/' ? curdir_fullpath : "#{curdir_fullpath}/"
 col_aligned_entries.each do |entries_col|
   entries_col.each do |entry|
     # values_atで作り出したnil?は無視
     next if entry.nil?
 
-    entry_path += entry
+    entry_path = curdir_fullpath + entry
     if File.symlink?(entry_path)
       print "#{entry}@".ljust(longest_name_length)
     elsif File.directory?(entry_path)
