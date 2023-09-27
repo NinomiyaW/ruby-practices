@@ -1,10 +1,10 @@
 # frozen_string_literal: true
-
+require 'debug'
 # オプションなしのls
 COLUMN = 3
 curdir_fullpath = "#{Dir.getwd}/"
-get_curdir_entries = Dir.children(curdir_fullpath)
-
+# オプションなしの場合アルファベット順にファイルが並ぶ
+get_curdir_entries = Dir.entries(curdir_fullpath).sort
 # 隠しファイルを取り除く
 hidden_removed_entries = get_curdir_entries.delete_if { |entry| entry.start_with?('.') }
 # 出力用にエントリの中で一番名前の長いファイルの文字数を取っておく
