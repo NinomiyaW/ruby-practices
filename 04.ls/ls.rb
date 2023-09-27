@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-require 'debug'
+
 # オプションなしのls
 COLUMN = 3
 curdir_fullpath = "#{Dir.getwd}/"
