@@ -3,6 +3,20 @@
 COLUMN = 3
 SPACE = 3
 
+def main
+  curdir_fullpath = "#{Dir.getwd}/"
+  curdir_entries = Dir.entries(curdir_fullpath).sort
+  hidden_removed_entries = curdir_entries.delete_if { |entry| entry.start_with?('.') }
+  row = (hidden_removed_entries.length.to_f / COLUMN).ceil
+  aligned_entries = get_aligned_entries(row, hidden_removed_entries)
+
+  col_width = get_space(curdir_entries)
+  aligned_entries.each do |entries_col|
+    col_print(entries_col, curdir_fullpath, col_width)
+    puts
+  end
+end
+
 def get_space(entries)
   entries.max_by(&:length).length + SPACE
 end
@@ -32,14 +46,4 @@ def col_print(col, absolute_path, width)
   end
 end
 
-curdir_fullpath = "#{Dir.getwd}/"
-curdir_entries = Dir.entries(curdir_fullpath).sort
-hidden_removed_entries = curdir_entries.delete_if { |entry| entry.start_with?('.') }
-row = (hidden_removed_entries.length.to_f / COLUMN).ceil
-aligned_entries = get_aligned_entries(row, hidden_removed_entries)
-
-col_width = get_space(curdir_entries)
-aligned_entries.each do |entries_col|
-  col_print(entries_col, curdir_fullpath, col_width)
-  puts
-end
+main
