@@ -3,12 +3,12 @@
 COLUMN = 3
 SPACE = 3
 
-# 出力前の配列の整形に関わるメソッド
 def get_space(entries)
   entries.max_by(&:length).length + SPACE
 end
 
 def get_aligned_entries(row, entries)
+  # 項目の数が規定列数以下の場合、横に出力してしまうのでそれを回避する
   if row < COLUMN
     entries.each_slice(1).to_a
   else
@@ -17,7 +17,6 @@ def get_aligned_entries(row, entries)
   end
 end
 
-# 出力するメソッド
 def col_print(col, absolute_path, width)
   col.each do |element|
     next if element.nil?
@@ -33,14 +32,12 @@ def col_print(col, absolute_path, width)
   end
 end
 
-# ディレクトリストリームの取得・出力するために整形する作業
 curdir_fullpath = "#{Dir.getwd}/"
 curdir_entries = Dir.entries(curdir_fullpath).sort
 hidden_removed_entries = curdir_entries.delete_if { |entry| entry.start_with?('.') }
 row = (hidden_removed_entries.length.to_f / COLUMN).ceil
 aligned_entries = get_aligned_entries(row, hidden_removed_entries)
 
-# 出力作業
 col_width = get_space(curdir_entries)
 aligned_entries.each do |entries_col|
   col_print(entries_col, curdir_fullpath, col_width)
