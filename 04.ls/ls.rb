@@ -2,22 +2,23 @@
 
 COLUMN = 3
 SPACE = 1
+
 def main
-  current_path = "#{Dir.getwd}/"
+  current_path = '../../dummy/' # "#{Dir.getwd}/"
   current_entries = Dir.entries(current_path).sort
   hidden_removed_entries = current_entries.delete_if { |entry| entry.start_with?('.') }
-  distincted_entries = get_distincted_entries(hidden_removed_entries, current_path)
-  row = (distincted_entries.length.to_f / COLUMN).ceil
-  aligned_entries = get_aligned_entries(row, distincted_entries)
+  distinct_entries = distinguish_entries(hidden_removed_entries, current_path)
+  row = (distinct_entries.length.to_f / COLUMN).ceil
+  aligned_entries = align_entries(row, distinct_entries)
 
-  col_width = get_width(distincted_entries)
+  width = calculate_width(distinct_entries)
   aligned_entries.each do |col_entries|
-    print_col(col_entries, col_width)
+    print_col(width, col_entries)
     puts
   end
 end
 
-def get_distincted_entries(entries, absolute_path)
+def distinguish_entries(entries, absolute_path)
   entries.map do |entry|
     entry_path = absolute_path + entry
     if File.symlink?(entry_path)
@@ -30,20 +31,20 @@ def get_distincted_entries(entries, absolute_path)
   end
 end
 
-def get_width(entries)
+def calculate_width(entries)
   entries.max_by(&:length).length + SPACE
 end
 
-def get_aligned_entries(row, entries)
+def align_entries(row, entries)
   row_aligned_entries = entries.each_slice(row).to_a
   row_aligned_entries.map { |col_entries| col_entries.values_at(0...row) }.transpose
 end
 
-def print_col(col, width)
-  col.each do |element|
-    next if element.nil?
+def print_col(width, col_entries)
+  col_entries.each do |entry|
+    next if entry.nil?
 
-    print element.ljust(width)
+    print entry.ljust(width)
   end
 end
 
