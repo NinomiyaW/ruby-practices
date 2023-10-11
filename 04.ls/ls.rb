@@ -1,13 +1,18 @@
 # frozen_string_literal: true
 
+require 'optparse'
 COLUMN_COUNT = 3
 SPACE = 1
-
 def main
+  got_options = {}
+  opt = OptionParser.new
+  opt.on('-a') { |v| v }
+  opt.parse!(ARGV, into: got_options)
+
   path =  "#{Dir.getwd}/"
   entries = Dir.entries(path).sort
-  visible_entries = entries.delete_if { |entry| entry.start_with?('.') }
-  marked_entries = add_mark_end_of_entries(visible_entries, path)
+  entries_after_checked_options = got_options.key(true) == :a ? entries : entries.delete_if { |entry| entry.start_with?('.') }
+  marked_entries = append_suffix_by_file_type(entries_after_checked_options, path)
   row_count = (marked_entries.length.to_f / COLUMN_COUNT).ceil
   aligned_entries = align_entries(row_count, marked_entries)
 
@@ -17,7 +22,7 @@ def main
   end
 end
 
-def add_mark_end_of_entries(entries, path)
+def append_suffix_by_file_type(entries, path)
   entries.map do |entry|
     entry_path = path + entry
     if File.symlink?(entry_path)
