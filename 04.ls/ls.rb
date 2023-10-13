@@ -3,20 +3,21 @@
 require 'optparse'
 COLUMN_COUNT = 3
 SPACE = 1
+
 def main
-  got_options = {}
+  options = {}
   opt = OptionParser.new
   opt.on('-a') { |v| v }
-  opt.parse!(ARGV, into: got_options)
+  opt.parse!(ARGV, into: options)
 
   path =  "#{Dir.getwd}/"
   entries = Dir.entries(path).sort
-  entries_after_checked_options = got_options.key(true) == :a ? entries : entries.delete_if { |entry| entry.start_with?('.') }
-  marked_entries = append_suffix_by_file_type(entries_after_checked_options, path)
-  row_count = (marked_entries.length.to_f / COLUMN_COUNT).ceil
-  aligned_entries = align_entries(row_count, marked_entries)
+  filtered_entries = options.key?(:a) ? entries : entries.reject { |entry| entry.start_with?('.') }
+  entries_have_suffix = append_suffix_by_file_type(filtered_entries, path)
+  row_count = (entries_have_suffix.length.to_f / COLUMN_COUNT).ceil
+  aligned_entries = align_entries(row_count, entries_have_suffix)
 
-  width = calculate_width(marked_entries)
+  width = calculate_width(entries_have_suffix)
   aligned_entries.each do |row_entries|
     print_row_data(width, row_entries)
   end
