@@ -13,7 +13,7 @@ def main
   path =  "#{Dir.getwd}/"
   entries = Dir.entries(path).sort
   filtered_entries = options.key?(:a) ? entries : entries.reject { |entry| entry.start_with?('.') }
-  entries_have_suffix = append_suffix_by_file_type(filtered_entries, path)
+  entries_with_suffix = append_suffix_by_file_type(filtered_entries, path)
   row_count = (entries_have_suffix.length.to_f / COLUMN_COUNT).ceil
   aligned_entries = align_entries(row_count, entries_have_suffix)
 
