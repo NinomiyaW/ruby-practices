@@ -1,23 +1,29 @@
 # frozen_string_literal: true
 
+require 'optparse'
 COLUMN_COUNT = 3
 SPACE = 1
 
 def main
+  options = {}
+  opt = OptionParser.new
+  opt.on('-a') { |v| v }
+  opt.parse!(ARGV, into: options)
+
   path =  "#{Dir.getwd}/"
   entries = Dir.entries(path).sort
-  visible_entries = entries.delete_if { |entry| entry.start_with?('.') }
-  marked_entries = add_mark_end_of_entries(visible_entries, path)
-  row_count = (marked_entries.length.to_f / COLUMN_COUNT).ceil
-  aligned_entries = align_entries(row_count, marked_entries)
+  filtered_entries = options.key?(:a) ? entries : entries.reject { |entry| entry.start_with?('.') }
+  entries_with_suffix = append_suffix_by_file_type(filtered_entries, path)
+  row_count = (entries_have_suffix.length.to_f / COLUMN_COUNT).ceil
+  aligned_entries = align_entries(row_count, entries_have_suffix)
 
-  width = calculate_width(marked_entries)
+  width = calculate_width(entries_have_suffix)
   aligned_entries.each do |row_entries|
     print_row_data(width, row_entries)
   end
 end
 
-def add_mark_end_of_entries(entries, path)
+def append_suffix_by_file_type(entries, path)
   entries.map do |entry|
     entry_path = path + entry
     if File.symlink?(entry_path)
