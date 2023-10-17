@@ -14,10 +14,10 @@ def main
   entries = Dir.entries(path).sort
   filtered_entries = options.key?(:a) ? entries : entries.reject { |entry| entry.start_with?('.') }
   entries_with_suffix = append_suffix_by_file_type(filtered_entries, path)
-  row_count = (entries_have_suffix.length.to_f / COLUMN_COUNT).ceil
-  aligned_entries = align_entries(row_count, entries_have_suffix)
+  row_count = (entries_with_suffix.length.to_f / COLUMN_COUNT).ceil
+  aligned_entries = align_entries(row_count, entries_with_suffix)
 
-  width = calculate_width(entries_have_suffix)
+  width = calculate_width(entries_with_suffix)
   aligned_entries.each do |row_entries|
     print_row_data(width, row_entries)
   end
