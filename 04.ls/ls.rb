@@ -8,12 +8,14 @@ def main
   options = {}
   opt = OptionParser.new
   opt.on('-r') { |v| v }
+  opt.on('-a') { |v| v }
   opt.parse!(ARGV, into: options)
 
   path =  "#{Dir.getwd}/"
   entries = options.key?(:r) ? Dir.entries(path).sort.reverse : Dir.entries(path).sort
-  filtered_entries = entries.delete_if { |entry| entry.start_with?('.') }
+  filtered_entries = options.key?(:a) ? entries : entries.reject { |entry| entry.start_with?('.') }
   entries_with_suffix = append_suffix_by_filetype(filtered_entries, path)
+  
   row_count = (entries_with_suffix.length.to_f / COLUMN_COUNT).ceil
   aligned_entries = align_entries(row_count, entries_with_suffix)
 
@@ -23,7 +25,8 @@ def main
   end
 end
 
-def append_suffix_by_filetype(entries, path)
+
+def append_suffix_by_file_type(entries, path)
   entries.map do |entry|
     entry_path = path + entry
     if File.symlink?(entry_path)
