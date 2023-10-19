@@ -12,8 +12,9 @@ def main
   opt.parse!(ARGV, into: options)
 
   path =  "#{Dir.getwd}/"
-  entries = options.key?(:r) ? Dir.entries(path).sort.reverse : Dir.entries(path).sort
-  filtered_entries = options.key?(:a) ? entries : entries.reject { |entry| entry.start_with?('.') }
+  entries = Dir.entries(path).sort
+  sorted_entries = options.key?(:r) ? entries.reverse : entries
+  filtered_entries = options.key?(:a) ? sorted_entries : sorted_entries.reject { |entry| entry.start_with?('.') }
   entries_with_suffix = append_suffix_by_file_type(filtered_entries, path)
 
   row_count = (entries_with_suffix.length.to_f / COLUMN_COUNT).ceil
