@@ -14,27 +14,45 @@ def main
   opt.on('-l') { |v| v }
   opt.parse!(ARGV, into: options)
 
-  path =  "#{Dir.getwd}/"
+  path =  "/"
   entries = Dir.entries(path).sort
   sorted_entries = options.key?(:r) ? entries.reverse : entries
   filtered_entries = options.key?(:a) ? sorted_entries : sorted_entries.reject { |entry| entry.start_with?('.') }
   options.key?(:l) ? show_in_long_format(filtered_entries, path) : show_in_short_format(filtered_entries, path)
 end
 
-def show_in_long_format(entries, _path)
+def show_in_long_format(entries, path)
+  Dir.chdir(path)
   entries_long_format = []
+  total_blocks = 0
+  width = 0
   entries.each do |entry|
     entry_details = File.lstat(entry)
-    entry_details_hash = {}
+    total_blocks += entry_details.blocks
+    entry_details_array = []
 
-    entry_details_hash[:permission] = export_permission(entry_details)
-    entry_details_hash[:hardlink] = entry_details.nlink
-    entry_details_hash[:owner_name] = Etc.getpwuid(entry_details.uid).name
-    entry_details_hash[:group_name] = Etc.getgrgid(entry_details.gid).name
-    entries_long_format << entry_details_hash
+    entry_details_array << export_permission(entry_details)
+    entry_details_array << entry_details.nlink.to_s.rjust(2)
+    entry_details_array << Etc.getpwuid(entry_details.uid).name
+    entry_details_array << Etc.getgrgid(entry_details.gid).name
+    entry_details_array << entry_details.size.to_s.rjust(4)
+    entry_details_array << format_time(entry_details.ctime)
+    entry_details_array << fetch_filetype(entry,path)
+    # binding.break
+    temp_width = calculate_width(entry_details_array)
+    width = temp_width if width < temp_width
+    # binding.break
+    entries_long_format << entry_details_array
   end
-
-  p entries_long_format
+  # binding.break
+  puts 'total ' + total_blocks.to_s
+  entries_long_format.each do |entry|
+    # binding.break
+    entry.each do | element |
+      print element.to_s + ' '
+    end
+    puts
+  end
 end
 
 def export_permission(entry_details)
@@ -53,7 +71,30 @@ def export_permission(entry_details)
     for_permission_check.each_char.map do |permission|
       PERMISSION_TYPE[permission.to_i - 1]
     end.join
-  filetype_string + permission_string
+  filetype_string + permission_string + " "
+end
+
+def format_time(time)
+  [:month,:day,:hour,:min].map do | unit |
+    if unit == :hour
+      time.hour.to_s.rjust(2) + ':'
+    elsif unit == :min
+      time.min.to_s.rjust(2,'0')
+    else
+      time.send(unit).to_s.rjust(2) + ' '
+    end
+  end.join
+end
+
+def fetch_filetype(entry,path)
+  entry_path = path + entry
+  if File.symlink?(entry_path)
+    "#{entry}@"
+  elsif File.directory?(entry_path)
+    "#{entry}/"
+  else
+    entry
+  end
 end
 
 def show_in_short_format(entries, path)
@@ -70,14 +111,7 @@ end
 
 def append_suffix_by_file_type(entries, path)
   entries.map do |entry|
-    entry_path = path + entry
-    if File.symlink?(entry_path)
-      "#{entry}@"
-    elsif File.directory?(entry_path)
-      "#{entry}/"
-    else
-      entry
-    end
+    fetch_filetype(entry,path)
   end
 end
 
