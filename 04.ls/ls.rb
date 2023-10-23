@@ -1,8 +1,10 @@
 # frozen_string_literal: true
 
 require 'optparse'
+require 'debug'
 COLUMN_COUNT = 3
 SPACE = 1
+PERMISSION_TYPE = ['--x', '-w-', '-wx', 'r--', 'r-x', 'rw-', 'rwx'].freeze
 
 def main
   options = {}
@@ -16,8 +18,46 @@ def main
   entries = Dir.entries(path).sort
   sorted_entries = options.key?(:r) ? entries.reverse : entries
   filtered_entries = options.key?(:a) ? sorted_entries : sorted_entries.reject { |entry| entry.start_with?('.') }
-  entries_with_details = find_details_from_entries(filtered_entries)
-  entries_with_suffix = append_suffix_by_file_type(filtered_entries, path)
+  options.key?(:l) ? show_in_long_format(filtered_entries, path) : show_in_short_format(filtered_entries, path)
+end
+
+def show_in_long_format(entries, _path)
+  entries_long_format = []
+  entries.each do |entry|
+    entry_details = File.lstat(entry)
+    entry_details_hash = {}
+
+    entry_details_hash[:permission] = export_permission(entry_details)
+    entry_details_hash[:hardlink] = entry_details.nlink
+    entry_details_hash[:owner_name] = Etc.getpwuid(entry_details.uid).name
+    entry_details_hash[:group_name] = Etc.getgrgid(entry_details.gid).name
+    entries_long_format << entry_details_hash
+  end
+
+  p entries_long_format
+end
+
+def export_permission(entry_details)
+  filetype_string =
+    case ftype = entry_details.ftype
+    when 'fifo'
+      'p'
+    when 'file'
+      '-'
+    else
+      ftype.slice(0)
+    end
+  # File::lstat#modeの結果から権限に関わる部分を切り取る
+  for_permission_check = entry_details.mode.to_s(8).rjust(6, '0')[3..6]
+  permission_string =
+    for_permission_check.each_char.map do |permission|
+      PERMISSION_TYPE[permission.to_i - 1]
+    end.join
+  filetype_string + permission_string
+end
+
+def show_in_short_format(entries, path)
+  entries_with_suffix = append_suffix_by_file_type(entries, path)
 
   row_count = (entries_with_suffix.length.to_f / COLUMN_COUNT).ceil
   aligned_entries = align_entries(row_count, entries_with_suffix)
@@ -26,10 +66,6 @@ def main
   aligned_entries.each do |row_entries|
     print_row_data(width, row_entries)
   end
-end
-
-def find_details_from_entries(entries)
-  entries
 end
 
 def append_suffix_by_file_type(entries, path)
