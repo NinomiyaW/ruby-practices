@@ -76,7 +76,7 @@ end
 def format_time(time)
   %i[month day hour min].map do |unit|
     if unit == :hour
-      "#{time.hour.to_s.rjust(2)}:"
+      "#{time.hour.to_s.rjust(2, '0')}:"
     elsif unit == :min
       time.min.to_s.rjust(2, '0')
     else
