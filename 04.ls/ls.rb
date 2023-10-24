@@ -1,7 +1,9 @@
 # frozen_string_literal: true
 
 require 'optparse'
-require 'debug'
+require 'ffi-xattr'
+require 'etc'
+
 COLUMN_COUNT = 3
 SPACE = 1
 PERMISSION_TYPE = ['--x', '-w-', '-wx', 'r--', 'r-x', 'rw-', 'rwx'].freeze
@@ -14,45 +16,42 @@ def main
   opt.on('-l') { |v| v }
   opt.parse!(ARGV, into: options)
 
-  path =  "/"
+  path =  "#{Dir.getwd}/"
   entries = Dir.entries(path).sort
+
   sorted_entries = options.key?(:r) ? entries.reverse : entries
   filtered_entries = options.key?(:a) ? sorted_entries : sorted_entries.reject { |entry| entry.start_with?('.') }
-  options.key?(:l) ? show_in_long_format(filtered_entries, path) : show_in_short_format(filtered_entries, path)
+  options.key?(:l) ? show_long_format(filtered_entries, path) : show_short_format(filtered_entries, path)
 end
 
-def show_in_long_format(entries, path)
-  Dir.chdir(path)
+def show_long_format(entries, path)
   entries_long_format = []
   total_blocks = 0
-  width = 0
-  entries.each do |entry|
-    entry_details = File.lstat(entry)
-    total_blocks += entry_details.blocks
-    entry_details_array = []
 
-    entry_details_array << export_permission(entry_details)
-    entry_details_array << entry_details.nlink.to_s.rjust(2)
-    entry_details_array << Etc.getpwuid(entry_details.uid).name
-    entry_details_array << Etc.getgrgid(entry_details.gid).name
-    entry_details_array << entry_details.size.to_s.rjust(4)
-    entry_details_array << format_time(entry_details.ctime)
-    entry_details_array << fetch_filetype(entry,path)
-    # binding.break
-    temp_width = calculate_width(entry_details_array)
-    width = temp_width if width < temp_width
-    # binding.break
-    entries_long_format << entry_details_array
+  entries.each do |entry_name|
+    entry_details = File.lstat(entry_name)
+    total_blocks += entry_details.blocks
+    entries_long_format << load_details_each_entry(entry_name, entry_details, path)
   end
-  # binding.break
-  puts 'total ' + total_blocks.to_s
-  entries_long_format.each do |entry|
-    # binding.break
-    entry.each do | element |
-      print element.to_s + ' '
+  print_long_data(entries_long_format, total_blocks)
+end
+
+def load_details_each_entry(entry_name, entry_info, path)
+  xattr = Xattr::Lib.list(path + entry_name, @no_follow = true)
+  entry_details_array = []
+
+  entry_details_array << (!xattr.empty? ? "#{export_permission(entry_info)}@" : "#{export_permission(entry_info)} ")
+  entry_details_array << entry_info.nlink.to_s.rjust(3)
+  entry_details_array << Etc.getpwuid(entry_info.uid).name
+  entry_details_array << Etc.getgrgid(entry_info.gid).name.rjust(5)
+  entry_details_array << entry_info.size.to_s.rjust(5)
+  entry_details_array << format_time(entry_info.ctime)
+  entry_details_array <<
+    if entry_info.ftype == 'link'
+      "#{fetch_filetype(entry_name, path)} -> #{File.readlink(entry_name)}"
+    else
+      fetch_filetype(entry_name, path)
     end
-    puts
-  end
 end
 
 def export_permission(entry_details)
@@ -71,22 +70,22 @@ def export_permission(entry_details)
     for_permission_check.each_char.map do |permission|
       PERMISSION_TYPE[permission.to_i - 1]
     end.join
-  filetype_string + permission_string + " "
+  "#{filetype_string}#{permission_string}"
 end
 
 def format_time(time)
-  [:month,:day,:hour,:min].map do | unit |
+  %i[month day hour min].map do |unit|
     if unit == :hour
-      time.hour.to_s.rjust(2) + ':'
+      "#{time.hour.to_s.rjust(2)}:"
     elsif unit == :min
-      time.min.to_s.rjust(2,'0')
+      time.min.to_s.rjust(2, '0')
     else
-      time.send(unit).to_s.rjust(2) + ' '
+      "#{time.send(unit).to_s.rjust(2)} "
     end
   end.join
 end
 
-def fetch_filetype(entry,path)
+def fetch_filetype(entry, path)
   entry_path = path + entry
   if File.symlink?(entry_path)
     "#{entry}@"
@@ -97,8 +96,18 @@ def fetch_filetype(entry,path)
   end
 end
 
-def show_in_short_format(entries, path)
-  entries_with_suffix = append_suffix_by_file_type(entries, path)
+def print_long_data(entries, blocks)
+  puts "total #{blocks}"
+  entries.each do |entry|
+    entry.each do |each_element|
+      print "#{each_element} "
+    end
+    puts
+  end
+end
+
+def show_short_format(entries, path)
+  entries_with_suffix = append_suffix_to_entries(entries, path)
 
   row_count = (entries_with_suffix.length.to_f / COLUMN_COUNT).ceil
   aligned_entries = align_entries(row_count, entries_with_suffix)
@@ -109,9 +118,9 @@ def show_in_short_format(entries, path)
   end
 end
 
-def append_suffix_by_file_type(entries, path)
+def append_suffix_to_entries(entries, path)
   entries.map do |entry|
-    fetch_filetype(entry,path)
+    fetch_filetype(entry, path)
   end
 end
 
