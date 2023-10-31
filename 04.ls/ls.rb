@@ -30,12 +30,12 @@ def show_long_format(entries, path)
   entries.each do |entry|
     lstat = File.lstat(entry)
     total_blocks += lstat.blocks
-    long_format_entries << load_details_each_entry(entry, lstat, path)
+    long_format_entries << load_status_each_entry(entry, lstat, path)
   end
   print_long_data(long_format_entries, total_blocks)
 end
 
-def load_details_each_entry(entry, lstat, path)
+def load_status_each_entry(entry, lstat, path)
   xattr = Xattr::Lib.list(path + entry, @no_follow = true)
   lstat_array = []
   permission = read_permission(lstat)
