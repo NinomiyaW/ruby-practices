@@ -3,7 +3,7 @@
 require 'optparse'
 require 'ffi-xattr'
 require 'etc'
-
+require 'debug'
 COLUMN_COUNT = 3
 SPACE = 1
 PERMISSION_TYPE = ['--x', '-w-', '-wx', 'r--', 'r-x', 'rw-', 'rwx'].freeze
@@ -11,12 +11,13 @@ PERMISSION_TYPE = ['--x', '-w-', '-wx', 'r--', 'r-x', 'rw-', 'rwx'].freeze
 def main
   options = {}
   opt = OptionParser.new
-  opt.on('-r') { |v| v }
-  opt.on('-a') { |v| v }
-  opt.on('-l') { |v| v }
+  opt.on('-r')
+  opt.on('-a')
+  opt.on('-l')
   opt.parse!(ARGV, into: options)
 
-  path =  "#{Dir.getwd}/"
+  path = "#{Dir.getwd}/"
+  Dir.chdir(path)
   entries = Dir.entries(path).sort
 
   sorted_entries = options.key?(:r) ? entries.reverse : entries
@@ -25,38 +26,34 @@ def main
 end
 
 def show_long_format(entries, path)
-  entries_long_format = []
+  long_format_entries = []
   total_blocks = 0
-
-  entries.each do |entry_name|
-    entry_details = File.lstat(entry_name)
-    total_blocks += entry_details.blocks
-    entries_long_format << load_details_each_entry(entry_name, entry_details, path)
+  entries.each do |entry|
+    lstat = File.lstat(entry)
+    total_blocks += lstat.blocks
+    long_format_entries << load_details_each_entry(entry, lstat, path)
   end
-  print_long_data(entries_long_format, total_blocks)
+  print_long_data(long_format_entries, total_blocks)
 end
 
-def load_details_each_entry(entry_name, entry_info, path)
-  xattr = Xattr::Lib.list(path + entry_name, @no_follow = true)
-  entry_details_array = []
-
-  entry_details_array << (!xattr.empty? ? "#{export_permission(entry_info)}@" : "#{export_permission(entry_info)} ")
-  entry_details_array << entry_info.nlink.to_s.rjust(3)
-  entry_details_array << Etc.getpwuid(entry_info.uid).name
-  entry_details_array << Etc.getgrgid(entry_info.gid).name.rjust(5)
-  entry_details_array << entry_info.size.to_s.rjust(5)
-  entry_details_array << format_time(entry_info.ctime)
-  entry_details_array <<
-    if entry_info.ftype == 'link'
-      "#{fetch_filetype(entry_name, path)} -> #{File.readlink(entry_name)}"
-    else
-      fetch_filetype(entry_name, path)
-    end
+def load_details_each_entry(entry, lstat, path)
+  xattr = Xattr::Lib.list(path + entry, @no_follow = true)
+  lstat_array = []
+  permission = read_permission(lstat)
+  lstat_array << (xattr.empty? ? "#{permission} " : "#{permission}@")
+  lstat_array << lstat.nlink.to_s.rjust(3)
+  lstat_array << Etc.getpwuid(lstat.uid).name
+  lstat_array << Etc.getgrgid(lstat.gid).name.rjust(5)
+  lstat_array << lstat.size.to_s.rjust(5)
+  lstat_array << lstat.ctime.strftime('%m %d %H:%M')
+  file_name = append_suffix_by_filetype(entry, path)
+  file_name_and_link_to = lstat.ftype == 'link' ? "#{file_name} -> #{File.readlink(entry)}" : file_name
+  lstat_array << file_name_and_link_to
 end
 
-def export_permission(entry_details)
+def read_permission(lstat)
   filetype_string =
-    case ftype = entry_details.ftype
+    case ftype = lstat.ftype
     when 'fifo'
       'p'
     when 'file'
@@ -65,7 +62,7 @@ def export_permission(entry_details)
       ftype.slice(0)
     end
   # File::lstat#modeの結果から権限に関わる部分を切り取る
-  for_permission_check = entry_details.mode.to_s(8).rjust(6, '0')[3..6]
+  for_permission_check = lstat.mode.to_s(8).rjust(6, '0')[3..6]
   permission_string =
     for_permission_check.each_char.map do |permission|
       PERMISSION_TYPE[permission.to_i - 1]
@@ -73,19 +70,7 @@ def export_permission(entry_details)
   "#{filetype_string}#{permission_string}"
 end
 
-def format_time(time)
-  %i[month day hour min].map do |unit|
-    if unit == :hour
-      "#{time.hour.to_s.rjust(2, '0')}:"
-    elsif unit == :min
-      time.min.to_s.rjust(2, '0')
-    else
-      "#{time.send(unit).to_s.rjust(2)} "
-    end
-  end.join
-end
-
-def fetch_filetype(entry, path)
+def append_suffix_by_filetype(entry, path)
   entry_path = path + entry
   if File.symlink?(entry_path)
     "#{entry}@"
@@ -98,11 +83,9 @@ end
 
 def print_long_data(entries, blocks)
   puts "total #{blocks}"
-  entries.each do |entry|
-    entry.each do |each_element|
-      print "#{each_element} "
-    end
-    puts
+  entries.each do |entry_lstats|
+    binding.break
+    puts entry_lstats.join(' ')
   end
 end
 
@@ -120,7 +103,7 @@ end
 
 def append_suffix_to_entries(entries, path)
   entries.map do |entry|
-    fetch_filetype(entry, path)
+    append_suffix_by_filetype(entry, path)
   end
 end
 
