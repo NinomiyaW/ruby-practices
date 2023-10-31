@@ -3,7 +3,7 @@
 require 'optparse'
 require 'ffi-xattr'
 require 'etc'
-require 'debug'
+
 COLUMN_COUNT = 3
 SPACE = 1
 PERMISSION_TYPE = ['--x', '-w-', '-wx', 'r--', 'r-x', 'rw-', 'rwx'].freeze
@@ -17,7 +17,6 @@ def main
   opt.parse!(ARGV, into: options)
 
   path = "#{Dir.getwd}/"
-  Dir.chdir(path)
   entries = Dir.entries(path).sort
 
   sorted_entries = options.key?(:r) ? entries.reverse : entries
@@ -84,7 +83,6 @@ end
 def print_long_data(entries, blocks)
   puts "total #{blocks}"
   entries.each do |entry_lstats|
-    binding.break
     puts entry_lstats.join(' ')
   end
 end
